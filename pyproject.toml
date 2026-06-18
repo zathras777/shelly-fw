@@ -1,9 +1,11 @@
 [project]
 name = "shelly-fw"
 version = "0.1.0"
+requires-python = ">=3.11"
 
 dependencies = [
     "requests",
+    "packaging"
 ]
 
 [project.scripts]
