@@ -17,7 +17,7 @@ sudo apk add pipx [alpine]
 Then clone this repository and run the installation script:
 
 ```
-$ git clone https://github.com/
+$ git clone https://github.com/zathras777/shelly-fw.git
 $ cd shelly-fw
 $ ./install.sh
 ```
@@ -32,10 +32,20 @@ $ pipx ensurepath
 
 ```
 $ shelly-fw 192.168.0.0/24
-Scanning subnet: 10.0.74.0/24
-192.168.0.15 gen=3 model=S3PM-001PCEU16 app=MiniPMG3 version=1.7.1 id=shellypmminig3-xxx
+Scanning subnet 192.168.0.0/24 using 50 workers...
+Found 21 device(s)
+
+19 device(s) need updated...
+
+Updating MiniPMG3 device(s)...
 ...
 ```
+
+## Notes
+
+- an http server will be created to serve the downloaded firmware files using an IP address that is automaticlly identified and port 8007.
+- version matching is used to get the latest version of suitable firmware, but updates are not done automatically
+- stable versions will not be changed to beta
 
 ## Acknowledgements
 
