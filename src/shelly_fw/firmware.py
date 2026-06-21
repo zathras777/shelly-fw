@@ -1,6 +1,6 @@
+import re
 from dataclasses import dataclass
 from pathlib import Path
-from tempfile import TemporaryDirectory
 
 import requests
 import urllib3
@@ -10,6 +10,22 @@ from .discover import ShellyDevice
 from .http import FirmwareServer, FirmwareStore
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+_SHELLY_VERSION_RE = re.compile(
+    r"v?"
+    r"(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)"
+    r"(?:[-_.]?(?P<pre>alpha|a|beta|b|rc|dev)(?P<pre_num>\d+)?)?",
+    re.IGNORECASE,
+)
+
+_PRERELEASE_TAGS = {
+    "alpha": "a",
+    "a": "a",
+    "beta": "b",
+    "b": "b",
+    "rc": "rc",
+    "dev": "dev",
+}
 
 
 @dataclass(frozen=True)
@@ -40,15 +56,36 @@ def parse_firmware_info(data: dict) -> FirmwareInfo:
     )
 
 
+def parse_shelly_version(version: str) -> Version | None:
+    match = _SHELLY_VERSION_RE.search(version.strip())
+    if match is None:
+        return None
+
+    normalized = (
+        f"{match.group('major')}.{match.group('minor')}.{match.group('patch')}"
+    )
+    pre = match.group("pre")
+    if pre is not None:
+        tag = _PRERELEASE_TAGS[pre.lower()]
+        number = match.group("pre_num") or "0"
+        normalized = f"{normalized}{tag}{number}"
+
+    return Version(normalized)
+
+
 def choose_firmware_channel(current_version: str, info: FirmwareInfo) -> str | None:
-    current = Version(current_version)
+    current = parse_shelly_version(current_version)
+    if current is None:
+        return None
 
     # Device is already on beta/dev/rc etc.
     if current.is_prerelease:
         if info.beta is None:
             return None
 
-        beta = Version(info.beta.version)
+        beta = parse_shelly_version(info.beta.version)
+        if beta is None:
+            return None
 
         if beta > current:
             return "beta"
@@ -59,7 +96,9 @@ def choose_firmware_channel(current_version: str, info: FirmwareInfo) -> str | N
     if info.stable.version is None:
         return None
 
-    stable = Version(info.stable.version)
+    stable = parse_shelly_version(info.stable.version)
+    if stable is None:
+        return None
 
     if stable > current:
         return "stable"
