@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import ipaddress
-import time
 
 from .discover import discover_devices, group_devices_by_app
 from .firmware import Firmware
@@ -70,6 +69,13 @@ def parse_args() -> argparse.Namespace:
         help="Number of parallel scan workers. Default: 50",
     )
 
+    parser.add_argument(
+        "--serve-timeout",
+        type=float,
+        default=300.0,
+        help="Seconds to keep the firmware server available after update requests. Default: 300",
+    )
+
     return parser.parse_args()
 
 
@@ -125,9 +131,9 @@ def main() -> None:
                 print(f"Updating {fw.app} device(s)...")
                 fw.update_devices(server)
 
-            # Sleep to allow firmware to be downloaded
             print("\nWaiting for firmware to be downloaded...")
-            time.sleep(60)
+            if not server.wait_for_idle(timeout=args.serve_timeout):
+                print("Firmware server timeout reached while downloads may still be active.")
         finally:
             server.stop()
 

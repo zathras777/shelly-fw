@@ -165,7 +165,7 @@ class Firmware:
             firmware_url = server.url_for(f"{self.app}-{channel}-firmware.zip")
             for device in devices:
                 print(f"  {device.ip} -> {firmware_url}")
-                device_url = f"http://{device.ip}/ota?url={firmware_url}"
+                device_url = f"http://{device.ip}/ota"
                 print(f"    {device_url}")
-                response = requests.get(device_url)
+                response = requests.get(device_url, params={"url": firmware_url})
                 print(f"    {response.status_code} {response.reason}")
